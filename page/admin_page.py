@@ -1,6 +1,7 @@
 from email.mime import message
 import streamlit as st
 from datetime import datetime, timezone, timedelta
+from component.editable_table import editable_table
 from component.table_with_dialog import table_with_dialog
 from service.account_service import get_all_accounts, update_account, create_account, delete_account, get_account_name_map, get_managers_name_map
 from service.house_service import get_all_houses, create_house, update_house, delete_house
@@ -358,11 +359,11 @@ def admin_dashboard(account, current_page="dashboard"):
                         manager_df,
                         column_config={
                             "manager_name": "Quản lý",
-                            "Mới": st.column_config.NumberColumn("Mới", format="%d"),
-                            "Đã xem": st.column_config.NumberColumn("Đã xem", format="%d"),
-                            "Quan tâm": st.column_config.NumberColumn("Quan tâm", format="%d"),
-                            "Đặt cọc": st.column_config.NumberColumn("Đặt cọc", format="%d"),
-                            "Hủy": st.column_config.NumberColumn("Hủy", format="%d"),
+                            "Chốt": st.column_config.NumberColumn("Chốt", format="%d"),
+                            "Gần xem": st.column_config.NumberColumn("Gần xem", format="%d"),
+                            "Không xem": st.column_config.NumberColumn("Không xem", format="%d"),
+                            "Đang chăm sóc": st.column_config.NumberColumn("Đang chăm sóc", format="%d"),
+                            "Không chốt": st.column_config.NumberColumn("Không chốt", format="%d"),
                             "total": st.column_config.NumberColumn("Tổng", format="%d")
                         },
                         hide_index=True,
@@ -379,11 +380,11 @@ def admin_dashboard(account, current_page="dashboard"):
                         marketer_df,
                         column_config={
                             "marketer_name": "Marketing",
-                            "Mới": st.column_config.NumberColumn("Mới", format="%d"),
-                            "Đã xem": st.column_config.NumberColumn("Đã xem", format="%d"),
-                            "Quan tâm": st.column_config.NumberColumn("Quan tâm", format="%d"),
-                            "Đặt cọc": st.column_config.NumberColumn("Đặt cọc", format="%d"),
-                            "Hủy": st.column_config.NumberColumn("Hủy", format="%d"),
+                            "Chốt": st.column_config.NumberColumn("Chốt", format="%d"),
+                            "Gần xem": st.column_config.NumberColumn("Gần xem", format="%d"),
+                            "Không xem": st.column_config.NumberColumn("Không xem", format="%d"),
+                            "Đang chăm sóc": st.column_config.NumberColumn("Đang chăm sóc", format="%d"),
+                            "Không chốt": st.column_config.NumberColumn("Không chốt", format="%d"),
                             "total": st.column_config.NumberColumn("Tổng", format="%d")
                         },
                         hide_index=True,
@@ -403,7 +404,7 @@ def admin_dashboard(account, current_page="dashboard"):
                     with chart_col1:
                         if manager_stats:
                             st.write("**Thống kê theo Quản lý**")
-                            manager_chart_df = manager_df.set_index('manager_name')[['Mới', 'Đã xem', 'Quan tâm', 'Đặt cọc', 'Hủy']]
+                            manager_chart_df = manager_df.set_index('manager_name')[["Chốt", "Gần xem", "Không xem", "Đang chăm sóc", "Không chốt"]]
                             fig_manager = px.bar(
                                 manager_chart_df.T,
                                 title="Số lượng khách theo trạng thái - Quản lý",
@@ -411,38 +412,38 @@ def admin_dashboard(account, current_page="dashboard"):
                                 height=400
                             )
                             st.plotly_chart(fig_manager, use_container_width=True)
-                
-                # Marketer chart
-                with chart_col2:
-                    if marketer_stats:
-                        st.write("**Thống kê theo Marketing**")
-                        marketer_chart_df = marketer_df.set_index('marketer_name')[['Mới', 'Đã xem', 'Quan tâm', 'Đặt cọc', 'Hủy']]
-                        fig_marketer = px.bar(
-                            marketer_chart_df.T,
-                            title="Số lượng khách theo trạng thái - Marketing",
-                            labels={'index': 'Trạng thái', 'value': 'Số lượng'},
-                            height=400
-                        )
-                        st.plotly_chart(fig_marketer, use_container_width=True)
-                
-                # Overall status distribution pie chart
-                if manager_stats and marketer_stats:
-                    st.write("**Phân bố tổng thể theo trạng thái**")
                     
-                    # Calculate total by status across all managers and marketers
-                    total_by_status = {}
-                    status_columns = ['Mới', 'Đã xem', 'Quan tâm', 'Đặt cọc', 'Hủy']
+                    # Marketer chart
+                    with chart_col2:
+                        if marketer_stats:
+                            st.write("**Thống kê theo Marketing**")
+                            marketer_chart_df = marketer_df.set_index('marketer_name')[["Chốt", "Gần xem", "Không xem", "Đang chăm sóc", "Không chốt"]]
+                            fig_marketer = px.bar(
+                                marketer_chart_df.T,
+                                title="Số lượng khách theo trạng thái - Marketing",
+                                labels={'index': 'Trạng thái', 'value': 'Số lượng'},
+                                height=400
+                            )
+                            st.plotly_chart(fig_marketer, use_container_width=True)
                     
-                    for status in status_columns:
-                        total_by_status[status] = sum(row.get(status, 0) for row in manager_stats)
-                    
-                    if sum(total_by_status.values()) > 0:
-                        fig_pie = px.pie(
-                            values=list(total_by_status.values()),
-                            names=list(total_by_status.keys()),
-                            title="Phân bố khách hàng theo trạng thái"
-                        )
-                        st.plotly_chart(fig_pie, use_container_width=True)
+                    # Overall status distribution pie chart
+                    if manager_stats and marketer_stats:
+                        st.write("**Phân bố tổng thể theo trạng thái**")
+                        
+                        # Calculate total by status across all managers and marketers
+                        total_by_status = {}
+                        status_columns = ["Chốt", "Gần xem", "Không xem", "Đang chăm sóc", "Không chốt"]
+                        
+                        for status in status_columns:
+                            total_by_status[status] = sum(row.get(status, 0) for row in manager_stats)
+                        
+                        if sum(total_by_status.values()) > 0:
+                            fig_pie = px.pie(
+                                values=list(total_by_status.values()),
+                                names=list(total_by_status.keys()),
+                                title="Phân bố khách hàng theo trạng thái"
+                            )
+                            st.plotly_chart(fig_pie, use_container_width=True)
                 else:
                     st.info("Không có dữ liệu để hiển thị biểu đồ")
 

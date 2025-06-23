@@ -139,7 +139,7 @@ def get_houses_with_managers_map(manager_id: int = None) -> Tuple[Optional[Dict]
 
 def get_guest_status_options() -> List[str]:
     """Get available guest status options"""
-    return ["Mới", "Đã xem", "Quan tâm", "Đặt cọc", "Hủy"]
+    return ["Chốt", "Gần xem", "Không xem", "Đang chăm sóc", "Không chốt"]
 
 def get_guest_analytics_by_manager(start_date: str = None, end_date: str = None) -> Tuple[Optional[List[Dict]], Optional[str]]:
     """Get guest statistics grouped by manager and status within date range"""
@@ -170,7 +170,7 @@ def get_guest_analytics_by_manager(start_date: str = None, end_date: str = None)
                     if manager_id not in stats:
                         stats[manager_id] = {
                             'manager_name': manager_name,
-                            'Mới': 0, 'Đã xem': 0, 'Quan tâm': 0, 'Đặt cọc': 0, 'Hủy': 0,
+                            'Chốt': 0, 'Gần xem': 0, 'Không xem': 0, 'Đang chăm sóc': 0, 'Không chốt': 0,
                             'total': 0
                         }
                     
@@ -209,7 +209,7 @@ def get_guest_analytics_by_marketer(start_date: str = None, end_date: str = None
                     if marketer_id not in stats:
                         stats[marketer_id] = {
                             'marketer_name': marketer_name,
-                            'Mới': 0, 'Đã xem': 0, 'Quan tâm': 0, 'Đặt cọc': 0, 'Hủy': 0,
+                            'Chốt': 0, 'Gần xem': 0, 'Không xem': 0, 'Đang chăm sóc': 0, 'Không chốt': 0,
                             'total': 0
                         }
                     

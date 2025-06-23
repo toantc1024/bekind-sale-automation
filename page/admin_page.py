@@ -195,218 +195,222 @@ def admin_dashboard(account, current_page="dashboard"):
         st.title("Quản lý khách")
         st.write("Chức năng quản lý khách hàng dành cho quản trị viên")
         
-        # Get data
-        guests, guest_error = get_guests_with_details()  # Admin sees all guests
-        guest_status_options = get_guest_status_options()
-        houses_name_map, house_error = get_houses_name_map()
-        houses_with_managers_map, house_manager_error = get_houses_with_managers_map()
-        marketers_name_map, marketer_error = get_marketers_name_map()
+        # Create tabs for guest management
+        tab1, tab2 = st.tabs(["📋 Danh sách khách", "📊 Thống kê"])
         
-        if guest_error or house_error or house_manager_error or marketer_error:
-            st.error("Không thể lấy dữ liệu. Vui lòng thử lại sau.")
-            return
+        with tab1:
+            # Get data
+            guests, guest_error = get_guests_with_details()  # Admin sees all guests
+            guest_status_options = get_guest_status_options()
+            houses_name_map, house_error = get_houses_name_map()
+            houses_with_managers_map, house_manager_error = get_houses_with_managers_map()
+            marketers_name_map, marketer_error = get_marketers_name_map()
             
-        # Add new guest dialog
-        if st.button("➕ Thêm khách mới"):
-            st.session_state.show_admin_add_dialog = True
-            st.rerun()
-            
-        if st.session_state.get('show_admin_add_dialog', False):
-            admin_add_guest_dialog(houses_name_map, guest_status_options, marketers_name_map)
-        
-        if guests:
-            # Prepare DataFrame
-            df_data = []
-            for guest in guests:
-                df_data.append({
-                    'id': guest['id'],
-                    'guest_name': guest['guest_name'],
-                    'guest_phone_number': guest['guest_phone_number'],
-                    'house_address': guest['house']['address'],
-                    'manager_name': guest['house']['manager']['full_name'],
-                    'view_date': format_vietnam_datetime(guest['view_date']),
-                    'status': guest['status'],
-                    'marketer_name': guest['marketer']['full_name'],
-                    'created_at': format_vietnam_datetime(guest['created_at']),
-                    'admin_note': guest['admin_note'] or '',
-                    'manager_note': guest['manager_note'] or ''
-                })
-            
-            df = pd.DataFrame(df_data)
-            
-            # Column configuration for admin role
-            column_labels = {
-                'id': 'ID',
-                'guest_name': 'Tên khách',
-                'guest_phone_number': 'Số điện thoại',
-                'house_address': 'Địa chỉ nhà',
-                'manager_name': 'Quản lý nhà',
-                'view_date': 'Ngày và giờ xem',
-                'status': 'Trạng thái',
-                'marketer_name': 'Nhân viên marketing',
-                'created_at': 'Ngày tạo',
-                'admin_note': 'Ghi chú admin',
-                'manager_note': 'Ghi chú quản lý'
-            }
-            
-            # Dropdown options for edit dialog
-            dropdown_columns = {
-                'status': guest_status_options,
-                'house_address': list(houses_name_map.values()),
-                'marketer_name': list(marketers_name_map.values())
-            }
-            
-            # Admin role restrictions - disable manager and marketer assignment
-            hidden_columns = ['id']
-            disabled_columns = ['manager_name', 'created_at']
-            
-            def handle_edit(row_idx, new_values):
-                guest_id = df.iloc[row_idx]['id']
-                # Admin can edit all fields except restricted ones
-                allowed_fields = ['guest_name', 'guest_phone_number', 'view_date', 'status', 'admin_note', 'manager_note']
-                updates = {k: v for k, v in new_values.items() if k in allowed_fields}
+            if guest_error or house_error or house_manager_error or marketer_error:
+                st.error("Không thể lấy dữ liệu. Vui lòng thử lại sau.")
+                return
                 
-                # Handle house address change
-                if 'house_address' in new_values and new_values['house_address'] in houses_name_map.values():
-                    house_ids = list(houses_name_map.keys())
-                    house_options = list(houses_name_map.values())
-                    house_id = house_ids[house_options.index(new_values['house_address'])]
-                    updates['house_id'] = house_id
-                    updates.pop('house_address', None)
+            # Add new guest dialog
+            if st.button("➕ Thêm khách mới"):
+                st.session_state.show_admin_add_dialog = True
+                st.rerun()
                 
-                # Handle marketer change
-                if 'marketer_name' in new_values and new_values['marketer_name'] in marketers_name_map.values():
-                    marketer_ids = list(marketers_name_map.keys())
-                    marketer_options = list(marketers_name_map.values())
-                    marketer_id = marketer_ids[marketer_options.index(new_values['marketer_name'])]
-                    updates['marketer_id'] = marketer_id
-                    updates.pop('marketer_name', None)
+            if st.session_state.get('show_admin_add_dialog', False):
+                admin_add_guest_dialog(houses_name_map, guest_status_options, marketers_name_map)
+            
+            if guests:
+                # Prepare DataFrame
+                df_data = []
+                for guest in guests:
+                    df_data.append({
+                        'id': guest['id'],
+                        'guest_name': guest['guest_name'],
+                        'guest_phone_number': guest['guest_phone_number'],
+                        'house_address': guest['house']['address'],
+                        'manager_name': guest['house']['manager']['full_name'],
+                        'view_date': format_vietnam_datetime(guest['view_date']),
+                        'status': guest['status'],
+                        'marketer_name': guest['marketer']['full_name'],
+                        'created_at': format_vietnam_datetime(guest['created_at']),
+                        'admin_note': guest['admin_note'] or '',
+                        'manager_note': guest['manager_note'] or ''
+                    })
                 
-                if updates:
-                    result, message = update_guest(guest_id, updates, role="Admin")
-                    if result:
+                df = pd.DataFrame(df_data)
+                
+                # Column configuration for admin role
+                column_labels = {
+                    'id': 'ID',
+                    'guest_name': 'Tên khách',
+                    'guest_phone_number': 'Số điện thoại',
+                    'house_address': 'Địa chỉ nhà',
+                    'manager_name': 'Quản lý nhà',
+                    'view_date': 'Ngày và giờ xem',
+                    'status': 'Trạng thái',
+                    'marketer_name': 'Nhân viên marketing',
+                    'created_at': 'Ngày tạo',
+                    'admin_note': 'Ghi chú admin',
+                    'manager_note': 'Ghi chú quản lý'
+                }
+                
+                # Dropdown options for edit dialog
+                dropdown_columns = {
+                    'status': guest_status_options,
+                    'house_address': list(houses_name_map.values()),
+                    'marketer_name': list(marketers_name_map.values())
+                }
+                
+                # Admin role restrictions - disable manager and marketer assignment
+                hidden_columns = ['id']
+                disabled_columns = ['manager_name', 'created_at']
+                
+                def handle_edit(row_idx, new_values):
+                    guest_id = df.iloc[row_idx]['id']
+                    # Admin can edit all fields except restricted ones
+                    allowed_fields = ['guest_name', 'guest_phone_number', 'view_date', 'status', 'admin_note', 'manager_note']
+                    updates = {k: v for k, v in new_values.items() if k in allowed_fields}
+                    
+                    # Handle house address change
+                    if 'house_address' in new_values and new_values['house_address'] in houses_name_map.values():
+                        house_ids = list(houses_name_map.keys())
+                        house_options = list(houses_name_map.values())
+                        house_id = house_ids[house_options.index(new_values['house_address'])]
+                        updates['house_id'] = house_id
+                        updates.pop('house_address', None)
+                    
+                    # Handle marketer change
+                    if 'marketer_name' in new_values and new_values['marketer_name'] in marketers_name_map.values():
+                        marketer_ids = list(marketers_name_map.keys())
+                        marketer_options = list(marketers_name_map.values())
+                        marketer_id = marketer_ids[marketer_options.index(new_values['marketer_name'])]
+                        updates['marketer_id'] = marketer_id
+                        updates.pop('marketer_name', None)
+                    
+                    if updates:
+                        result, message = update_guest(guest_id, updates, role="Admin")
+                        if result:
+                            st.success(message)
+                            st.rerun()
+                        else:
+                            st.error(message)
+                
+                def handle_delete(row_idx, old_row):
+                    guest_id = df.iloc[row_idx]['id']
+                    success, message = delete_guest(guest_id)
+                    if success:
                         st.success(message)
                         st.rerun()
                     else:
                         st.error(message)
-            
-            def handle_delete(row_idx, old_row):
-                guest_id = df.iloc[row_idx]['id']
-                success, message = delete_guest(guest_id)
-                if success:
-                    st.success(message)
-                    st.rerun()
-                else:
-                    st.error(message)
-            
-            # Display table with dialog actions
-            st.subheader("Danh sách khách hàng")
-            table_with_dialog(
-                df=df,
-                key="admin_guests_table",
-                on_edit=handle_edit,
-                on_delete=handle_delete,
-                dropdown_columns=dropdown_columns,
-                hidden_columns=hidden_columns,
-                disabled_columns=disabled_columns,
-                column_labels=column_labels,
-                allow_edit=True,
-                allow_delete=True  # Admin can delete
-            )
-            
-        else:
-            st.error("Không thể lấy danh sách khách hàng. Vui lòng thử lại sau.")
-
-    elif current_page == "analytics":
-        st.title("Thống kê và phân tích")
-        st.write("Báo cáo thống kê khách hàng theo quản lý và nhân viên marketing")
-        
-        # Date range selector
-        col1, col2 = st.columns(2)
-        with col1:
-            # Default to start of current week (Monday)
-            today = datetime.now().date()
-            start_of_week = today - timedelta(days=today.weekday())
-            start_date = st.date_input("Từ ngày", value=start_of_week, key="analytics_start_date")
-        
-        with col2:
-            # Default to end of current week (Sunday)
-            end_of_week = start_of_week + timedelta(days=6)
-            end_date = st.date_input("Đến ngày", value=end_of_week, key="analytics_end_date")
-        
-        if start_date and end_date:
-            start_date_str = start_date.isoformat() + "T00:00:00"
-            end_date_str = end_date.isoformat() + "T23:59:59"
-            
-            # Get analytics data
-            manager_stats, manager_error = get_guest_analytics_by_manager(start_date_str, end_date_str)
-            marketer_stats, marketer_error = get_guest_analytics_by_marketer(start_date_str, end_date_str)
-            
-            if manager_error or marketer_error:
-                st.error("Không thể lấy dữ liệu thống kê. Vui lòng thử lại sau.")
-                return
-            
-            # Manager statistics section
-            st.subheader("📊 Thống kê theo Quản lý nhà")
-            if manager_stats:
-                manager_df = pd.DataFrame(manager_stats)
-                st.dataframe(
-                    manager_df,
-                    column_config={
-                        "manager_name": "Quản lý",
-                        "Mới": st.column_config.NumberColumn("Mới", format="%d"),
-                        "Đã xem": st.column_config.NumberColumn("Đã xem", format="%d"),
-                        "Quan tâm": st.column_config.NumberColumn("Quan tâm", format="%d"),
-                        "Đặt cọc": st.column_config.NumberColumn("Đặt cọc", format="%d"),
-                        "Hủy": st.column_config.NumberColumn("Hủy", format="%d"),
-                        "total": st.column_config.NumberColumn("Tổng", format="%d")
-                    },
-                    hide_index=True,
-                    use_container_width=True
-                )
-            else:
-                st.info("Không có dữ liệu quản lý trong khoảng thời gian này")
-            
-            # Marketer statistics section
-            st.subheader("📈 Thống kê theo Marketing")
-            if marketer_stats:
-                marketer_df = pd.DataFrame(marketer_stats)
-                st.dataframe(
-                    marketer_df,
-                    column_config={
-                        "marketer_name": "Marketing",
-                        "Mới": st.column_config.NumberColumn("Mới", format="%d"),
-                        "Đã xem": st.column_config.NumberColumn("Đã xem", format="%d"),
-                        "Quan tâm": st.column_config.NumberColumn("Quan tâm", format="%d"),
-                        "Đặt cọc": st.column_config.NumberColumn("Đặt cọc", format="%d"),
-                        "Hủy": st.column_config.NumberColumn("Hủy", format="%d"),
-                        "total": st.column_config.NumberColumn("Tổng", format="%d")
-                    },
-                    hide_index=True,
-                    use_container_width=True
-                )
-            else:
-                st.info("Không có dữ liệu marketing trong khoảng thời gian này")
-            
-            # Charts section
-            st.subheader("📊 Biểu đồ thống kê")
-            
-            # Create charts if we have data
-            if manager_stats or marketer_stats:
-                chart_col1, chart_col2 = st.columns(2)
                 
-                # Manager chart
-                with chart_col1:
-                    if manager_stats:
-                        st.write("**Thống kê theo Quản lý**")
-                        manager_chart_df = manager_df.set_index('manager_name')[['Mới', 'Đã xem', 'Quan tâm', 'Đặt cọc', 'Hủy']]
-                        fig_manager = px.bar(
-                            manager_chart_df.T,
-                            title="Số lượng khách theo trạng thái - Quản lý",
-                            labels={'index': 'Trạng thái', 'value': 'Số lượng'},
-                            height=400
-                        )
-                        st.plotly_chart(fig_manager, use_container_width=True)
+                # Display table with dialog actions
+                st.subheader("Danh sách khách hàng")
+                table_with_dialog(
+                    df=df,
+                    key="admin_guests_table",
+                    on_edit=handle_edit,
+                    on_delete=handle_delete,
+                    dropdown_columns=dropdown_columns,
+                    hidden_columns=hidden_columns,
+                    disabled_columns=disabled_columns,
+                    column_labels=column_labels,
+                    allow_edit=True,
+                    allow_delete=True  # Admin can delete
+                )
+                
+            else:
+                st.error("Không thể lấy danh sách khách hàng. Vui lòng thử lại sau.")
+        
+        with tab2:
+            st.subheader("Thống kê và phân tích")
+            st.write("Báo cáo thống kê khách hàng theo quản lý và nhân viên marketing")
+            
+            # Date range selector
+            col1, col2 = st.columns(2)
+            with col1:
+                # Default to start of current week (Monday)
+                today = datetime.now().date()
+                start_of_week = today - timedelta(days=today.weekday())
+                start_date = st.date_input("Từ ngày", value=start_of_week, key="analytics_start_date")
+            
+            with col2:
+                # Default to end of current week (Sunday)
+                end_of_week = start_of_week + timedelta(days=6)
+                end_date = st.date_input("Đến ngày", value=end_of_week, key="analytics_end_date")
+            
+            if start_date and end_date:
+                start_date_str = start_date.isoformat() + "T00:00:00"
+                end_date_str = end_date.isoformat() + "T23:59:59"
+                
+                # Get analytics data
+                manager_stats, manager_error = get_guest_analytics_by_manager(start_date_str, end_date_str)
+                marketer_stats, marketer_error = get_guest_analytics_by_marketer(start_date_str, end_date_str)
+                
+                if manager_error or marketer_error:
+                    st.error("Không thể lấy dữ liệu thống kê. Vui lòng thử lại sau.")
+                    return
+                
+                # Manager statistics section
+                st.subheader("📊 Thống kê theo Quản lý nhà")
+                if manager_stats:
+                    manager_df = pd.DataFrame(manager_stats)
+                    st.dataframe(
+                        manager_df,
+                        column_config={
+                            "manager_name": "Quản lý",
+                            "Mới": st.column_config.NumberColumn("Mới", format="%d"),
+                            "Đã xem": st.column_config.NumberColumn("Đã xem", format="%d"),
+                            "Quan tâm": st.column_config.NumberColumn("Quan tâm", format="%d"),
+                            "Đặt cọc": st.column_config.NumberColumn("Đặt cọc", format="%d"),
+                            "Hủy": st.column_config.NumberColumn("Hủy", format="%d"),
+                            "total": st.column_config.NumberColumn("Tổng", format="%d")
+                        },
+                        hide_index=True,
+                        use_container_width=True
+                    )
+                else:
+                    st.info("Không có dữ liệu quản lý trong khoảng thời gian này")
+                
+                # Marketer statistics section
+                st.subheader("📈 Thống kê theo Marketing")
+                if marketer_stats:
+                    marketer_df = pd.DataFrame(marketer_stats)
+                    st.dataframe(
+                        marketer_df,
+                        column_config={
+                            "marketer_name": "Marketing",
+                            "Mới": st.column_config.NumberColumn("Mới", format="%d"),
+                            "Đã xem": st.column_config.NumberColumn("Đã xem", format="%d"),
+                            "Quan tâm": st.column_config.NumberColumn("Quan tâm", format="%d"),
+                            "Đặt cọc": st.column_config.NumberColumn("Đặt cọc", format="%d"),
+                            "Hủy": st.column_config.NumberColumn("Hủy", format="%d"),
+                            "total": st.column_config.NumberColumn("Tổng", format="%d")
+                        },
+                        hide_index=True,
+                        use_container_width=True
+                    )
+                else:
+                    st.info("Không có dữ liệu marketing trong khoảng thời gian này")
+                
+                # Charts section
+                st.subheader("📊 Biểu đồ thống kê")
+                
+                # Create charts if we have data
+                if manager_stats or marketer_stats:
+                    chart_col1, chart_col2 = st.columns(2)
+                    
+                    # Manager chart
+                    with chart_col1:
+                        if manager_stats:
+                            st.write("**Thống kê theo Quản lý**")
+                            manager_chart_df = manager_df.set_index('manager_name')[['Mới', 'Đã xem', 'Quan tâm', 'Đặt cọc', 'Hủy']]
+                            fig_manager = px.bar(
+                                manager_chart_df.T,
+                                title="Số lượng khách theo trạng thái - Quản lý",
+                                labels={'index': 'Trạng thái', 'value': 'Số lượng'},
+                                height=400
+                            )
+                            st.plotly_chart(fig_manager, use_container_width=True)
                 
                 # Marketer chart
                 with chart_col2:
@@ -439,8 +443,8 @@ def admin_dashboard(account, current_page="dashboard"):
                             title="Phân bố khách hàng theo trạng thái"
                         )
                         st.plotly_chart(fig_pie, use_container_width=True)
-            else:
-                st.info("Không có dữ liệu để hiển thị biểu đồ")
+                else:
+                    st.info("Không có dữ liệu để hiển thị biểu đồ")
 
 @st.dialog("Thêm khách mới")
 def admin_add_guest_dialog(houses_name_map, guest_status_options, marketers_name_map):
